@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "install/remote_nsp.hpp"
+#include "install/nsp.hpp"
 
 #include <threads.h>
 #include "data/buffered_placeholder_writer.hpp"
@@ -30,13 +30,13 @@ SOFTWARE.
 
 namespace tin::install::nsp
 {
-    RemoteNSP::RemoteNSP()
+    NSP::NSP()
     {
 
     }
 
     // TODO: Do verification: PFS0 magic, sizes not zero
-    void RemoteNSP::RetrieveHeader()
+    void NSP::RetrieveHeader()
     {
         LOG_DEBUG("Retrieving remote NSP header...\n");
 
@@ -56,7 +56,7 @@ namespace tin::install::nsp
         printBytes(m_headerBytes.data(), m_headerBytes.size(), true);
     }
 
-    const PFS0FileEntry* RemoteNSP::GetFileEntry(unsigned int index)
+    const PFS0FileEntry* NSP::GetFileEntry(unsigned int index)
     {
         if (index >= this->GetBaseHeader()->numFiles)
             THROW_FORMAT("File entry index is out of bounds\n")
@@ -69,7 +69,7 @@ namespace tin::install::nsp
         return reinterpret_cast<PFS0FileEntry*>(m_headerBytes.data() + fileEntryOffset);
     }
 
-    const PFS0FileEntry* RemoteNSP::GetFileEntryByExtension(std::string extension)
+    const PFS0FileEntry* NSP::GetFileEntryByExtension(std::string extension)
     {
         for (unsigned int i = 0; i < this->GetBaseHeader()->numFiles; i++)
         {
@@ -84,7 +84,7 @@ namespace tin::install::nsp
         return nullptr;
     }
 
-    const PFS0FileEntry* RemoteNSP::GetFileEntryByName(std::string name)
+    const PFS0FileEntry* NSP::GetFileEntryByName(std::string name)
     {
         for (unsigned int i = 0; i < this->GetBaseHeader()->numFiles; i++)
         {
@@ -98,7 +98,7 @@ namespace tin::install::nsp
         return nullptr;
     }
 
-    const PFS0FileEntry* RemoteNSP::GetFileEntryByNcaId(const NcmContentId& ncaId)
+    const PFS0FileEntry* NSP::GetFileEntryByNcaId(const NcmContentId& ncaId)
     {
         const PFS0FileEntry* fileEntry = nullptr;
         std::string ncaIdStr = tin::util::GetNcaIdString(ncaId);
@@ -120,13 +120,13 @@ namespace tin::install::nsp
         return fileEntry;
     }
 
-    const char* RemoteNSP::GetFileEntryName(const PFS0FileEntry* fileEntry)
+    const char* NSP::GetFileEntryName(const PFS0FileEntry* fileEntry)
     {
         u64 stringTableStart = sizeof(PFS0BaseHeader) + this->GetBaseHeader()->numFiles * sizeof(PFS0FileEntry);
         return reinterpret_cast<const char*>(m_headerBytes.data() + stringTableStart + fileEntry->stringTableOffset);
     }
 
-    const PFS0BaseHeader* RemoteNSP::GetBaseHeader()
+    const PFS0BaseHeader* NSP::GetBaseHeader()
     {
         if (m_headerBytes.empty())
             THROW_FORMAT("Cannot retrieve header as header bytes are empty. Have you retrieved it yet?\n");
@@ -134,7 +134,7 @@ namespace tin::install::nsp
         return reinterpret_cast<PFS0BaseHeader*>(m_headerBytes.data());
     }
 
-    u64 RemoteNSP::GetDataOffset()
+    u64 NSP::GetDataOffset()
     {
         if (m_headerBytes.empty())
             THROW_FORMAT("Cannot get data offset as header is empty. Have you retrieved it yet?\n");

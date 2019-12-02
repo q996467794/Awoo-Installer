@@ -3,12 +3,15 @@
 
 using namespace pu::ui::elm;
 namespace inst::ui {
-    class optionsPage : public pu::ui::Layout
+    class OptionsPage : public pu::ui::Layout
     {
         public:
-            optionsPage();
-            PU_SMART_CTOR(optionsPage)
-            void onInput(u64 Down, u64 Up, u64 Held, pu::ui::Touch Pos);
+            OptionsPage();
+            PU_SMART_CTOR(OptionsPage)
+            void OnInput(u64 Down, u64 Up, u64 Held, pu::ui::Touch Pos) override;
+            void OnStart() override;
+            bool OnStop() override;
+            void OnTick() override;
         private:
             TextBlock::Ref butText;
             Rectangle::Ref topRect;

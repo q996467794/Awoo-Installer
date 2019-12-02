@@ -1,9 +1,9 @@
 #include <filesystem>
 #include <switch.h>
 #include "ui/MainApplication.hpp"
-#include "ui/mainPage.hpp"
-#include "ui/instPage.hpp"
-#include "ui/optionsPage.hpp"
+#include "ui/MainPage.hpp"
+#include "ui/InstallPage.hpp"
+#include "ui/OptionsPage.hpp"
 #include "util/util.hpp"
 #include "util/config.hpp"
 
@@ -14,7 +14,7 @@ namespace inst::ui {
 
     std::vector<std::string> ourMenuEntries = {"Ignore minimum firmware version required by titles", "Verify NCA signatures before installation", "Enable \"boost mode\" during installations", "Ask to delete original files after installation", "Remove anime", "Signature patches source URL: "};
 
-    optionsPage::optionsPage() : Layout::Layout() {
+    OptionsPage::OptionsPage() : Layout::Layout() {
         this->SetBackgroundColor(COLOR("#670000FF"));
         if (std::filesystem::exists(inst::config::appDir + "/background.png")) this->SetBackgroundImage(inst::config::appDir + "/background.png");
         else this->SetBackgroundImage("romfs:/background.jpg");
@@ -42,12 +42,12 @@ namespace inst::ui {
         this->Add(this->menu);
     }
 
-    std::string optionsPage::getMenuOptionIcon(bool ourBool) {
+    std::string OptionsPage::getMenuOptionIcon(bool ourBool) {
         if(ourBool) return "romfs:/check-box-outline.png";
         else return "romfs:/checkbox-blank-outline.png";
     }
 
-    void optionsPage::setMenuText() {
+    void OptionsPage::setMenuText() {
         this->menu->ClearItems();
         auto ignoreFirmOption = pu::ui::elm::MenuItem::New(ourMenuEntries[0]);
         ignoreFirmOption->SetColor(COLOR("#FFFFFFFF"));
@@ -77,54 +77,46 @@ namespace inst::ui {
         this->menu->AddItem(creditsOption);
     }
 
-    void optionsPage::onInput(u64 Down, u64 Up, u64 Held, pu::ui::Touch Pos) {
+    void OptionsPage::OnInput(u64 Down, u64 Up, u64 Held, pu::ui::Touch Pos) {
         if (Down & KEY_B) {
-            mainApp->LoadLayout(mainApp->mainPage);
+            mainApp->PopLayout();
         }
         if ((Down & KEY_A) || (Up & KEY_TOUCH)) {
             std::string keyboardResult;
             switch (this->menu->GetSelectedIndex()) {
                 case 0:
                     inst::config::ignoreReqVers = !inst::config::ignoreReqVers;
-                    inst::config::setConfig();
                     this->setMenuText();
                     break;
                 case 1:
                     if (inst::config::validateNCAs) {
                         if (inst::ui::mainApp->CreateShowDialog("Warning!", "Some installable files may contain malicious contents! Only disable this\nfeature if you are absolutely certain the software you will be installing\nis trustworthy!\n\nDo you still want to disable NCA signature verification?", {"Cancel", "Yes, I want a brick"}, false) == 1) inst::config::validateNCAs = false;
                     } else inst::config::validateNCAs = true;
-                    inst::config::setConfig();
                     this->setMenuText();
                     break;
                 case 2:
                     inst::config::overClock = !inst::config::overClock;
-                    inst::config::setConfig();
                     this->setMenuText();
                     break;
                 case 3:
                     inst::config::deletePrompt = !inst::config::deletePrompt;
-                    inst::config::setConfig();
                     this->setMenuText();
                     break;
                 case 4:
                     if (inst::config::gayMode) {
                         inst::config::gayMode = false;
                         mainApp->mainPage->awooImage->SetVisible(true);
-                        mainApp->instpage->awooImage->SetVisible(true);
                     }
                     else {
                         inst::config::gayMode = true;
                         mainApp->mainPage->awooImage->SetVisible(false);
-                        mainApp->instpage->awooImage->SetVisible(false);
                     }
-                    inst::config::setConfig();
                     this->setMenuText();
                     break;
                 case 5:
                     keyboardResult = inst::util::softwareKeyboard("Enter the URL to obtain Signature Patches from", inst::config::sigPatchesUrl.c_str(), 500);
                     if (keyboardResult.size() > 0) {
                         inst::config::sigPatchesUrl = keyboardResult;
-                        inst::config::setConfig();
                         this->setMenuText();
                     }
                     break;
@@ -136,4 +128,13 @@ namespace inst::ui {
             }
         }
     }
+
+    void OptionsPage::OnStart() {}
+
+    bool OptionsPage::OnStop() {
+        inst::config::setConfig();
+        return true;
+    }
+
+    void OptionsPage::OnTick() {}
 }

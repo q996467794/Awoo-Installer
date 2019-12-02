@@ -1,0 +1,74 @@
+{
+    "main":{
+        "menu": {
+            "sd": "Install from SD card",
+            "net": "Install over LAN or internet",
+            "usb": "Install over USB",
+            "sig": "Manage signature patches",
+            "set": "Settings",
+            "exit": "Exit"
+        },
+        "net": {
+            "title": "Network connection not available",
+            "content": "Check that airplane mode is disabled and you're connected to a local network.",
+            "opt0": "OK"
+        },
+        "usb": {
+            "warn": {
+                "title": "Warning!",
+                "content": "Due to the nature of libnx's USB comms implementation, USB installations may not \"just werk\" on some devices and setups. If you experience issues with USB installations, please don't pull your hair out! It's advised to use LAN/Internet installations instead for remote installation, especially when paired with an ethernet adapter! It is not recomended, but disabling NCA verification in Awoo Installer's settings may help if you plan to use USB installations a lot.\n\nThis is not Awoo Installer's fault, I promise. You have been warned...",
+                "opt0": "OK",
+                "opt1": "Don't tell me again"
+            },
+            "error": {
+                "title": "No USB connection detected",
+                "content": "Plug in to a compatible device to install over USB",
+                "opt0": "OK",
+                "opt1": "Help"
+            },
+            "help": {
+                "title": "Help",
+                "content": "Files can be installed over USB from other devices using tools such as ns-usbloader or Fluffy. To send these files to your Switch, open one of the pieces of software recomended above on your PC, select your files, then upload to your console!\n\nUnfortunately USB installations require a specific setup on some platforms, and can be rather buggy at times due to the nature of libnx's USB comms. If you can't figure it out, give LAN/internet installs a try, or copy your files to your SD card and try the \"Install from SD Card\" option on the main menu!",
+                "opt0": "OK"
+            }
+        },
+        "buttons": "\ue0e0 Select    \ue0e1 Exit "
+    },
+    "inst": {
+        "net": {
+            "buttons": "\ue0e3 Install Over Internet    \ue0e2 Help    \ue0e1 Cancel ",
+            "help": {
+                "title": "Help",
+                "content": "Files can be installed remotely from your other devices using tools such as ns-usbloader or Fluffy. To send these files to your Switch, simply open one of the pieces of software recomended above on your PC or mobile device, input your Switch's IP address (listed on-screen), select your files, then upload to your console! If the software you're using won't let you select specific file types, try renaming the extension to something it accepts. Awoo Installer doesn't care about file extensions during net installations!\n\nIf you can't figure it out, just copy your files to your SD card and try the \"Install from SD Card\" option on the main menu!",
+                "opt0": "OK"
+            },
+            "src": {
+                "title": "Where do you want to install from?",
+                "content": "Press B to cancel",
+                "opt0": "URL",
+                "opt1": "Google Drive"
+            },
+            "gdrive_hint": "Enter the file ID of a public Google Drive file",
+            "url_hint": "Enter the Internet address of a file"
+        },
+        "target": {
+            "title": "Installation target?",
+            "content0": "Where should ",
+            "content1": " be installed to?",
+            "contents0": "Where should the selected ",
+            "contents1": " files be installed to?"
+        }
+    },
+    "common": {
+        "failed": "FAILED",
+        "sd": "SD card",
+        "nand": "Internal Storage",
+        "finished": [
+            "Enjoy your \"legal backups\"!",
+            "I'm sure after you give the game a try you'll have tons of fun actually buying it!",
+            "You buy gamu right? Nintendo-san thanka-you for your purchase!",
+            "Bypassing DRM is great, isn't it?",
+            "You probably saved like six trees by not buying the game! All that plastic goes somewhere!"
+        ]
+    }
+}

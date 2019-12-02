@@ -1,17 +1,20 @@
-#include <filesystem>
 #include "ui/MainApplication.hpp"
-#include "ui/mainPage.hpp"
-#include "ui/sdInstPage.hpp"
-#include "sdInstall.hpp"
+#include "ui/SdInstPage.hpp"
+#include "ui/InstallPage.hpp"
+
 #include "util/util.hpp"
 #include "util/config.hpp"
+#include "util/lang.hpp"
+#include "sdInstall.hpp"
+
+#include <filesystem>
 
 #define COLOR(hex) pu::ui::Color::FromHex(hex)
 
 namespace inst::ui {
     extern MainApplication *mainApp;
 
-    sdInstPage::sdInstPage() : Layout::Layout() {
+    SdInstPage::SdInstPage() : Layout::Layout() {
         this->SetBackgroundColor(COLOR("#670000FF"));
         if (std::filesystem::exists(inst::config::appDir + "/background.png")) this->SetBackgroundImage(inst::config::appDir + "/background.png");
         else this->SetBackgroundImage("romfs:/background.jpg");
@@ -36,9 +39,11 @@ namespace inst::ui {
         this->Add(this->butText);
         this->Add(this->pageInfoText);
         this->Add(this->menu);
+
+        this->drawMenuItems(true, "sdmc:/");
     }
 
-    void sdInstPage::drawMenuItems(bool clearItems, std::filesystem::path ourPath) {
+    void SdInstPage::drawMenuItems(bool clearItems, std::filesystem::path ourPath) {
         if (clearItems) this->selectedTitles = {};
         if (ourPath == "sdmc:") this->currentDir = std::filesystem::path(ourPath.string() + "/");
         else this->currentDir = ourPath;
@@ -79,7 +84,7 @@ namespace inst::ui {
         }
     }
 
-    void sdInstPage::followDirectory() {
+    void SdInstPage::followDirectory() {
         int selectedIndex = this->menu->GetSelectedIndex();
         int dirListSize = this->ourDirectories.size();
         if (this->currentDir != "sdmc:/") {
@@ -96,7 +101,7 @@ namespace inst::ui {
         }
     }
 
-    void sdInstPage::selectNsp(int selectedIndex) {
+    void SdInstPage::selectNsp(int selectedIndex) {
         int dirListSize = this->ourDirectories.size();
         if (this->currentDir != "sdmc:/") dirListSize++;
         if (this->menu->GetItems()[selectedIndex]->GetIcon() == "romfs:/check-box-outline.png") {
@@ -111,18 +116,35 @@ namespace inst::ui {
         this->drawMenuItems(false, currentDir);
     }
 
-    void sdInstPage::startInstall() {
-        int dialogResult = -1;
-        if (this->selectedTitles.size() == 1) {
-            dialogResult = mainApp->CreateShowDialog("Where should " + inst::util::shortenString(std::filesystem::path(this->selectedTitles[0]).filename().string(), 32, true) + " be installed to?", "Press B to cancel", {"SD Card", "Internal Storage"}, false);
-        } else dialogResult = mainApp->CreateShowDialog("Where should the selected " + std::to_string(this->selectedTitles.size()) + " files be installed to?", "Press B to cancel", {"SD Card", "Internal Storage"}, false);
-        if (dialogResult == -1) return;
-        nspInstStuff::installNspFromFile(this->selectedTitles, dialogResult);
+    void SdInstPage::startInstall() {
+        int rc = mainApp->CreateShowDialog(
+            "inst.target.title"_lang,
+            this->selectedTitles.size() == 1?
+                "inst.target.content0"_lang + inst::util::shortenString(std::filesystem::path(this->selectedTitles[0]).filename().string(), 32, true) + "inst.target.content1"_lang:
+                "inst.target.contents0"_lang + to_string(this->selectedTitles.size()) + "inst.target.contents1"_lang,
+            { "common.sd"_lang, "common.nand"_lang },
+            false
+        );
+        if (rc < 0)
+            return;
+        
+        NcmStorageId storageId;
+        if (rc == 0) {
+            storageId = NcmStorageId_SdCard;
+        } else {
+            storageId = NcmStorageId_BuiltInUser;
+        }
+
+        unordered_map<string,string> selectedMap;
+        for (filesystem::path path: this->selectedTitles)
+            selectedMap.insert( pair(path.string(), path.filename()));
+        
+        mainApp->LoadLayout(InstallPage::New(selectedMap, storageId, sd::GetSdTask, sd::nop));
     }
 
-    void sdInstPage::onInput(u64 Down, u64 Up, u64 Held, pu::ui::Touch Pos) {
+    void SdInstPage::OnInput(u64 Down, u64 Up, u64 Held, pu::ui::Touch Pos) {
         if (Down & KEY_B) {
-            mainApp->LoadLayout(mainApp->mainPage);
+            mainApp->PopLayout();
         }
         if ((Down & KEY_A) || (Up & KEY_TOUCH)) {
             this->selectNsp(this->menu->GetSelectedIndex());
@@ -152,4 +174,12 @@ namespace inst::ui {
             if (this->selectedTitles.size() > 0) this->startInstall();
         }
     }
+
+    void SdInstPage::OnStart() {}
+
+    bool SdInstPage::OnStop() {
+        return true;
+    }
+
+    void SdInstPage::OnTick() {}
 }

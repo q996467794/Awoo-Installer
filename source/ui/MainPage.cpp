@@ -1,9 +1,17 @@
-#include <filesystem>
+
 #include "ui/MainApplication.hpp"
-#include "ui/mainPage.hpp"
+#include "ui/MainPage.hpp"
+#include "ui/SdInstPage.hpp"
+#include "ui/NetWaitPage.hpp"
+#include "ui/UsbWaitPage.hpp"
+#include "ui/OptionsPage.hpp"
+
 #include "util/util.hpp"
 #include "util/config.hpp"
+#include "util/lang.hpp"
 #include "sigInstall.hpp"
+
+#include <filesystem>
 
 #define COLOR(hex) pu::ui::Color::FromHex(hex)
 
@@ -19,27 +27,27 @@ namespace inst::ui {
         this->titleImage = Image::New(0, 0, "romfs:/logo.png");
         this->appVersionText = TextBlock::New(480, 49, "v" + inst::config::appVersion, 22);
         this->appVersionText->SetColor(COLOR("#FFFFFFFF"));
-        this->butText = TextBlock::New(10, 678, "\ue0e0 Select    \ue0e1 Exit ", 24);
+        this->butText = TextBlock::New(10, 678, "main.buttons"_lang, 24);
         this->butText->SetColor(COLOR("#FFFFFFFF"));
         this->optionMenu = pu::ui::elm::Menu::New(0, 95, 1280, COLOR("#67000000"), 94, 6);
         this->optionMenu->SetOnFocusColor(COLOR("#00000033"));
         this->optionMenu->SetScrollbarColor(COLOR("#170909FF"));
-        this->installMenuItem = pu::ui::elm::MenuItem::New("Install from SD card");
+        this->installMenuItem = pu::ui::elm::MenuItem::New("main.menu.sd"_lang);
         this->installMenuItem->SetColor(COLOR("#FFFFFFFF"));
         this->installMenuItem->SetIcon("romfs:/micro-sd.png");
-        this->netInstallMenuItem = pu::ui::elm::MenuItem::New("Install over LAN or internet");
+        this->netInstallMenuItem = pu::ui::elm::MenuItem::New("main.menu.net"_lang);
         this->netInstallMenuItem->SetColor(COLOR("#FFFFFFFF"));
         this->netInstallMenuItem->SetIcon("romfs:/cloud-download.png");
-        this->usbInstallMenuItem = pu::ui::elm::MenuItem::New("Install over USB");
+        this->usbInstallMenuItem = pu::ui::elm::MenuItem::New("main.menu.usb"_lang);
         this->usbInstallMenuItem->SetColor(COLOR("#FFFFFFFF"));
         this->usbInstallMenuItem->SetIcon("romfs:/usb-port.png");
-        this->sigPatchesMenuItem = pu::ui::elm::MenuItem::New("Manage signature patches");
+        this->sigPatchesMenuItem = pu::ui::elm::MenuItem::New("main.menu.sig"_lang);
         this->sigPatchesMenuItem->SetColor(COLOR("#FFFFFFFF"));
         this->sigPatchesMenuItem->SetIcon("romfs:/wrench.png");
-        this->settingsMenuItem = pu::ui::elm::MenuItem::New("Settings");
+        this->settingsMenuItem = pu::ui::elm::MenuItem::New("main.menu.set"_lang);
         this->settingsMenuItem->SetColor(COLOR("#FFFFFFFF"));
         this->settingsMenuItem->SetIcon("romfs:/settings.png");
-        this->exitMenuItem = pu::ui::elm::MenuItem::New("Exit");
+        this->exitMenuItem = pu::ui::elm::MenuItem::New("main.menu.exit"_lang);
         this->exitMenuItem->SetColor(COLOR("#FFFFFFFF"));
         this->exitMenuItem->SetIcon("romfs:/exit-run.png");
         if (std::filesystem::exists(inst::config::appDir + "/awoo_main.png")) this->awooImage = Image::New(410, 190, inst::config::appDir + "/awoo_main.png");
@@ -64,30 +72,28 @@ namespace inst::ui {
     }
 
     void MainPage::installMenuItem_Click() {
-        mainApp->sdinstPage->drawMenuItems(true, "sdmc:/");
-        mainApp->sdinstPage->menu->SetSelectedIndex(0);
-        mainApp->LoadLayout(mainApp->sdinstPage);
+        mainApp->LoadLayout(SdInstPage::New());
     }
 
     void MainPage::netInstallMenuItem_Click() {
         if (inst::util::getIPAddress() == "1.0.0.127") {
-            inst::ui::mainApp->CreateShowDialog("Network connection not available", "Check that airplane mode is disabled and you're connected to a local network.", {"OK"}, true);
+            inst::ui::mainApp->CreateShowDialog("main.net.title"_lang, "main.net.content"_lang, { "main.net.opt0"_lang }, true);
             return;
         }
-        mainApp->netinstPage->startNetwork();
+        mainApp->LoadLayout(NetWaitPage::New());
     }
 
     void MainPage::usbInstallMenuItem_Click() {
         if (!inst::config::usbAck) {
-            if (mainApp->CreateShowDialog("Warning!", "Due to the nature of libnx's USB comms implementation, USB installations\nmay not \"just werk\" on some devices and setups. If you experience issues\nwith USB installations, please don't pull your hair out! It's advised to\nuse LAN/Internet installations instead for remote installation, especially\nwhen paired with an ethernet adapter! It is not recomended, but disabling\nNCA verification in Awoo Installer's settings may help if you plan to use\nUSB installations a lot.\n\nThis is not Awoo Installer's fault, I promise. You have been warned...", {"OK", "Don't tell me again"}, false) == 1) {
+            if (mainApp->CreateShowDialog("main.usb.warn.title"_lang, "main.usb.warn.content"_lang, { "main.usb.warn.opt0"_lang, "main.usb.warn.opt1"_lang }, false, 850) == 1) {
                 inst::config::usbAck = true;
                 inst::config::setConfig();
             }
         }
-        if (inst::util::getUsbState() == 5) mainApp->usbinstPage->startUsb();
+        if (inst::util::getUsbState() == 5) mainApp->LoadLayout(UsbWaitPage::New());
         else {
-            if (mainApp->CreateShowDialog("No USB connection detected", "Plug in to a compatible device to install over USB", {"OK", "Help"}, false) == 1)
-                inst::ui::mainApp->CreateShowDialog("Help", "Files can be installed over USB from other devices using tools such as\nns-usbloader or Fluffy. To send these files to your Switch, open one of\nthe pieces of software recomended above on your PC, select your files,\nthen upload to your console!\n\nUnfortunately USB installations require a specific setup on some\nplatforms, and can be rather buggy at times due to the nature of libnx's\nUSB comms. If you can't figure it out, give LAN/internet installs a try,\nor copy your files to your SD card and try the \"Install from SD Card\"\noption on the main menu!", {"OK"}, true);
+            if (mainApp->CreateShowDialog("main.usb.error.title"_lang, "main.usb.error.content"_lang, { "main.usb.error.opt0"_lang, "main.usb.error.opt1"_lang }, false) == 1)
+                inst::ui::mainApp->CreateShowDialog("main.usb.help.title"_lang, "main.usb.help.content"_lang, { "main.usb.help.opt0"_lang }, true, 850);
             return;
         }
     }
@@ -102,10 +108,10 @@ namespace inst::ui {
     }
 
     void MainPage::settingsMenuItem_Click() {
-        mainApp->LoadLayout(mainApp->optionspage);
+        mainApp->LoadLayout(OptionsPage::New());
     }
 
-    void MainPage::onInput(u64 Down, u64 Up, u64 Held, pu::ui::Touch Pos) {
+    void MainPage::OnInput(u64 Down, u64 Up, u64 Held, pu::ui::Touch Pos) {
         if ((Down & KEY_PLUS) || (Down & KEY_MINUS) || (Down & KEY_B)) {
             mainApp->FadeOut();
             mainApp->Close();
@@ -143,4 +149,12 @@ namespace inst::ui {
             if (!inst::config::gayMode) this->awooImage->SetVisible(true);
         }
     }
+
+    void MainPage::OnStart() {}
+
+    bool MainPage::OnStop() {
+        return (mainApp->CreateShowDialog("Close?", "Do you really want to close the application?", { "Yes", "No" }, true) == 0);
+    }
+
+    void MainPage::OnTick() {}
 }

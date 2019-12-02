@@ -18,4 +18,5 @@ namespace inst::util {
     std::vector<uint32_t> setClockSpeed(int deviceToClock, uint32_t clockSpeed);
     std::string getIPAddress();
     int getUsbState();
+    std::string GetMenuOptionIcon(bool ourBool);
 }

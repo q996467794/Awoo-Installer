@@ -105,7 +105,7 @@ namespace tin::install::nsp
         size_t startSizeBuffered = 0;
         double speed = 0.0;
 
-        inst::ui::setInstBarPerc(0);
+        //inst::ui::setInstBarPerc(0);
         while (!bufferedPlaceholderWriter.IsBufferDataComplete())
         {
             u64 newTime = armGetSystemTick();
@@ -122,21 +122,21 @@ namespace tin::install::nsp
 
                 int downloadProgress = (int)(((double)bufferedPlaceholderWriter.GetSizeBuffered() / (double)bufferedPlaceholderWriter.GetTotalDataSize()) * 100.0);
 
-                inst::ui::setInstInfoText("Downloading " + inst::util::formatUrlString(ncaFileName) + " at " + std::to_string(speed).substr(0, std::to_string(speed).size()-4) + "MB/s");
-                inst::ui::setInstBarPerc((double)downloadProgress);
+                //inst::ui::setInstInfoText("Downloading " + inst::util::formatUrlString(ncaFileName) + " at " + std::to_string(speed).substr(0, std::to_string(speed).size()-4) + "MB/s");
+                //inst::ui::setInstBarPerc((double)downloadProgress);
             }
         }
-        inst::ui::setInstBarPerc(100);
+        //inst::ui::setInstBarPerc(100);
 
-        inst::ui::setInstInfoText("Installing " + ncaFileName + "...");
-        inst::ui::setInstBarPerc(0);
+        //inst::ui::setInstInfoText("Installing " + ncaFileName + "...");
+        //inst::ui::setInstBarPerc(0);
         while (!bufferedPlaceholderWriter.IsPlaceholderComplete())
         {
             int installProgress = (int)(((double)bufferedPlaceholderWriter.GetSizeWrittenToPlaceholder() / (double)bufferedPlaceholderWriter.GetTotalDataSize()) * 100.0);
 
-            inst::ui::setInstBarPerc((double)installProgress);
+            //inst::ui::setInstBarPerc((double)installProgress);
         }
-        inst::ui::setInstBarPerc(100);
+        //inst::ui::setInstBarPerc(100);
 
         thrd_join(curlThread, NULL);
         thrd_join(writeThread, NULL);

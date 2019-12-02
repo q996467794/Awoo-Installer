@@ -2,6 +2,7 @@
 #include "util/error.hpp"
 #include "ui/MainApplication.hpp"
 #include "util/util.hpp"
+#include "util/lang.hpp"
 
 using namespace pu::ui::render;
 int main(int argc, char* argv[])
@@ -11,6 +12,7 @@ int main(int argc, char* argv[])
         auto renderer = Renderer::New(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER,
             RendererInitOptions::RendererNoSound, RendererHardwareFlags);
         auto main = inst::ui::MainApplication::New(renderer);
+        Language::Load();
         main->Prepare();
         main->Show();
     } catch (std::exception& e) {

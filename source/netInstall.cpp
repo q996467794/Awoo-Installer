@@ -29,16 +29,14 @@ SOFTWARE.
 
 #include <switch.h>
 #include "util/network_util.hpp"
-#include "install/install_nsp_remote.hpp"
+#include "install/install_nsp.hpp"
 #include "install/http_nsp.hpp"
 #include "install/install_xci.hpp"
 #include "install/http_xci.hpp"
 #include "install/install.hpp"
 #include "util/error.hpp"
 
-#include "ui/MainApplication.hpp"
 #include "netInstall.hpp"
-#include "sdInstall.hpp"
 #include "util/config.hpp"
 #include "util/util.hpp"
 #include "util/curl.hpp"
@@ -49,23 +47,15 @@ const int REMOTE_INSTALL_PORT = 2000;
 static int m_serverSocket = 0;
 static int m_clientSocket = 0;
 
-namespace inst::ui {
-    extern MainApplication *mainApp;
-
-    void setNetInfoText(std::string ourText){
-        mainApp->netinstPage->pageInfoText->SetText(ourText);
-        mainApp->CallForRender();
-    }
-}
-
-namespace netInstStuff{
-
-    void InitializeServerSocket() try
+namespace net{
+    Result InitializeServerSocket() try
     {
+        ASSERT_OK(curl_global_init(CURL_GLOBAL_ALL), "Curl failed to initialized");
+
         // Create a socket
         m_serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
 
-        if (m_serverSocket < -1)
+        if (m_serverSocket <= -1)
         {
             THROW_FORMAT("Failed to create a server socket. Error code: %u\n", errno);
         }
@@ -87,6 +77,13 @@ namespace netInstStuff{
         {
             THROW_FORMAT("Failed to listen on server socket. Error code: %u\n", errno);
         }
+
+        if (m_serverSocket <= 0)
+        {
+            THROW_FORMAT("Server socket failed to initialize.\n");
+        }
+
+        return 0;
     }
     catch (std::exception& e)
     {
@@ -98,215 +95,84 @@ namespace netInstStuff{
             close(m_serverSocket);
             m_serverSocket = 0;
         }
-        inst::ui::mainApp->CreateShowDialog("Failed to initialize server socket!", (std::string)e.what(), {"OK"}, true);
+        return -1;
     }
 
-    void OnUnwound()
-    {
-        LOG_DEBUG("unwinding view\n");
-        if (m_clientSocket != 0)
-        {
+    void CloseServerSocket() {
+        if (m_clientSocket != 0) {
             close(m_clientSocket);
             m_clientSocket = 0;
         }
-
+        if (m_serverSocket != 0)
+        {
+            close(m_serverSocket);
+            m_serverSocket = 0;
+        }
         curl_global_cleanup();
     }
 
-    void installTitleNet(std::vector<std::string> ourUrlList, int ourStorage, std::vector<std::string> urlListAltNames, std::string ourSource)
-    {
-        inst::util::initInstallServices();
-        if (appletGetAppletType() == AppletType_Application || appletGetAppletType() == AppletType_SystemApplication) appletBeginBlockingHomeButton(0);
-        inst::ui::loadInstallScreen();
-        bool nspInstalled = true;
-        NcmStorageId m_destStorageId = NcmStorageId_SdCard;
-
-        if (ourStorage) m_destStorageId = NcmStorageId_BuiltInUser;
-        unsigned int urlItr;
-
-        std::vector<std::string> urlNames;
-        if (urlListAltNames.size() > 0) {
-            for (long unsigned int i = 0; i < urlListAltNames.size(); i++) {
-                urlNames.push_back(inst::util::shortenString(urlListAltNames[i], 38, true));
-            }
+    shared_ptr<tin::install::Install> GetNetTask(string url, NcmStorageId destStorage) {
+        if (inst::curl::downloadToBuffer(url, 0x100, 0x103) == "HEAD") {
+            auto httpXCI = new tin::install::xci::HTTPXCI(url);
+            return shared_ptr<tin::install::xci::XCIInstallTask>(new tin::install::xci::XCIInstallTask(destStorage, inst::config::ignoreReqVers, httpXCI));
         } else {
-            for (long unsigned int i = 0; i < ourUrlList.size(); i++) {
-                urlNames.push_back(inst::util::shortenString(inst::util::formatUrlString(ourUrlList[i]), 38, true));
-            }
+            auto httpNSP = new tin::install::nsp::HTTPNSP(url);
+            return shared_ptr<tin::install::nsp::NSPInstall>(new tin::install::nsp::NSPInstall(destStorage, inst::config::ignoreReqVers, httpNSP));
         }
+    }
 
-        std::vector<int> previousClockValues;
-        if (inst::config::overClock) {
-            previousClockValues.push_back(inst::util::setClockSpeed(0, 1785000000)[0]);
-            previousClockValues.push_back(inst::util::setClockSpeed(1, 76800000)[0]);
-            previousClockValues.push_back(inst::util::setClockSpeed(2, 1600000000)[0]);
-        }
-
-        try {
-            for (urlItr = 0; urlItr < ourUrlList.size(); urlItr++) {
-                LOG_DEBUG("%s %s\n", "Install request from", ourUrlList[urlItr].c_str());
-                inst::ui::setTopInstInfoText("Installing " + urlNames[urlItr] + ourSource);
-
-                tin::install::Install* installTask;
-
-                if (inst::curl::downloadToBuffer(ourUrlList[urlItr], 0x100, 0x103) == "HEAD") {
-                    auto httpXCI = new tin::install::xci::HTTPXCI(ourUrlList[urlItr]);
-                    installTask = new tin::install::xci::XCIInstallTask(m_destStorageId, inst::config::ignoreReqVers, httpXCI);
-                } else {
-                    auto httpNSP = new tin::install::nsp::HTTPNSP(ourUrlList[urlItr]);
-                    installTask = new tin::install::nsp::RemoteNSPInstall(m_destStorageId, inst::config::ignoreReqVers, httpNSP);
-                }
-
-                LOG_DEBUG("%s\n", "Preparing installation");
-                inst::ui::setInstInfoText("Preparing installation...");
-                inst::ui::setInstBarPerc(0);
-                installTask->Prepare();
-
-                installTask->Begin();
-            }
-        }
-        catch (std::exception& e) {
-            LOG_DEBUG("Failed to install");
-            LOG_DEBUG("%s", e.what());
-            fprintf(stdout, "%s", e.what());
-            inst::ui::setInstInfoText("Failed to install " + urlNames[urlItr]);
-            inst::ui::setInstBarPerc(0);
-            inst::ui::mainApp->CreateShowDialog("Failed to install " + urlNames[urlItr] + "!", "Partially installed contents can be removed from the System Settings applet.\n\n" + (std::string)e.what(), {"OK"}, true);
-            nspInstalled = false;
-        }
-
-        if (previousClockValues.size() > 0) {
-            inst::util::setClockSpeed(0, previousClockValues[0]);
-            inst::util::setClockSpeed(1, previousClockValues[1]);
-            inst::util::setClockSpeed(2, previousClockValues[2]);
-        }
-
+    void SendAck() {
         LOG_DEBUG("%s\n", "Telling the server we're done installing");
         // Send 1 byte ack to close the server
         u8 ack = 0;
         tin::network::WaitSendNetworkData(m_clientSocket, &ack, sizeof(u8));
-
-        if(nspInstalled) {
-            inst::ui::setInstInfoText("Install complete");
-            inst::ui::setInstBarPerc(100);
-            if (ourUrlList.size() > 1) inst::ui::mainApp->CreateShowDialog(std::to_string(ourUrlList.size()) + " files installed successfully!", nspInstStuff::finishedMessage(), {"OK"}, true);
-            else inst::ui::mainApp->CreateShowDialog(urlNames[0] + " installed!", nspInstStuff::finishedMessage(), {"OK"}, true);
-        }
-        
-        LOG_DEBUG("Done");
-        if (appletGetAppletType() == AppletType_Application || appletGetAppletType() == AppletType_SystemApplication) appletEndBlockingHomeButton();
-        inst::ui::loadMainMenu();
-        inst::util::deinitInstallServices();
-        return;
     }
 
-    std::vector<std::string> OnSelected()
-    {
-        u64 freq = armGetSystemTickFreq();
-        u64 startTime = armGetSystemTick();
+    std::vector<std::string> GetUrls() try {
+        std::vector<std::string> urls;
 
-        OnUnwound();
+        struct sockaddr_in client;
+        socklen_t clientLen = sizeof(client);
 
-        try
+        m_clientSocket = accept(m_serverSocket, (struct sockaddr*)&client, &clientLen);
+
+        if (m_clientSocket >= 0)
         {
-            ASSERT_OK(curl_global_init(CURL_GLOBAL_ALL), "Curl failed to initialized");
+            LOG_DEBUG("%s\n", "Server accepted");
+            u32 size = 0;
+            tin::network::WaitReceiveNetworkData(m_clientSocket, &size, sizeof(u32));
+            size = ntohl(size);
 
-            // Initialize the server socket if it hasn't already been
-            if (m_serverSocket == 0)
+            LOG_DEBUG("Received url buf size: 0x%x\n", size);
+
+            if (size > MAX_URL_SIZE * MAX_URLS)
             {
-                InitializeServerSocket();
-
-                if (m_serverSocket <= 0)
-                {
-                    THROW_FORMAT("Server socket failed to initialize.\n");
-                }
+                THROW_FORMAT("URL size %x is too large!\n", size);
             }
 
-            std::string ourIPAddress = inst::util::getIPAddress();
-            inst::ui::setNetInfoText("Waiting for a connection... Your Switch's IP Address is: " + ourIPAddress);
-            LOG_DEBUG("%s %s\n", "Switch IP is ", ourIPAddress.c_str());
-            LOG_DEBUG("%s\n", "Waiting for network");
-            LOG_DEBUG("%s\n", "B to cancel");
-            
-            std::vector<std::string> urls;
+            // Make sure the last string is null terminated
+            auto urlBuf = std::make_unique<char[]>(size+1);
+            memset(urlBuf.get(), 0, size+1);
 
-            while (true)
-            {
-                // If we don't update the UI occasionally the Switch basically crashes on this screen if you press the home button
-                u64 newTime = armGetSystemTick();
-                if (newTime - startTime >= freq * 0.25) {
-                    startTime = newTime;
-                    inst::ui::mainApp->CallForRender();
-                }
+            tin::network::WaitReceiveNetworkData(m_clientSocket, urlBuf.get(), size);
 
-                // Break on input pressed
-                hidScanInput();
-                u64 kDown = hidKeysDown(CONTROLLER_P1_AUTO);
+            // Split the string up into individual URLs
+            std::stringstream urlStream(urlBuf.get());
+            std::string segment;
 
-                if (kDown & KEY_B)
-                {
-                    break;
-                }
-                if (kDown & KEY_Y)
-                {
-                    return {"supplyUrl"};
-                }
-                if (kDown & KEY_X)
-                {
-                    inst::ui::mainApp->CreateShowDialog("Help", "Files can be installed remotely from your other devices using tools such\nas ns-usbloader or Fluffy. To send these files to your Switch, simply\nopen one of the pieces of software recomended above on your PC or mobile\ndevice, input your Switch's IP address (listed on-screen), select your\nfiles, then upload to your console! If the software you're using won't\nlet you select specific file types, try renaming the extension to\nsomething it accepts. Awoo Installer doesn't care about file extensions\nduring net installations!\n\nIf you can't figure it out, just copy your files to your SD card and try\nthe \"Install from SD Card\" option on the main menu!", {"OK"}, true);
-                }
-
-                struct sockaddr_in client;
-                socklen_t clientLen = sizeof(client);
-
-                m_clientSocket = accept(m_serverSocket, (struct sockaddr*)&client, &clientLen);
-
-                if (m_clientSocket >= 0)
-                {
-                    LOG_DEBUG("%s\n", "Server accepted");
-                    u32 size = 0;
-                    tin::network::WaitReceiveNetworkData(m_clientSocket, &size, sizeof(u32));
-                    size = ntohl(size);
-
-                    LOG_DEBUG("Received url buf size: 0x%x\n", size);
-
-                    if (size > MAX_URL_SIZE * MAX_URLS)
-                    {
-                        THROW_FORMAT("URL size %x is too large!\n", size);
-                    }
-
-                    // Make sure the last string is null terminated
-                    auto urlBuf = std::make_unique<char[]>(size+1);
-                    memset(urlBuf.get(), 0, size+1);
-
-                    tin::network::WaitReceiveNetworkData(m_clientSocket, urlBuf.get(), size);
-
-                    // Split the string up into individual URLs
-                    std::stringstream urlStream(urlBuf.get());
-                    std::string segment;
-                    std::string nspExt = ".nsp";
-                    std::string nszExt = ".nsz";
-
-                    while (std::getline(urlStream, segment, '\n')) urls.push_back(segment);
-
-                    break;
-                }
-                else if (errno != EAGAIN)
-                {
-                    THROW_FORMAT("Failed to open client socket with code %u\n", errno);
-                }
-            }
-
-            return urls;
-
+            while (std::getline(urlStream, segment, '\n'))
+                urls.push_back(segment);
         }
-        catch (std::runtime_error& e)
+        else if (errno != EAGAIN)
         {
-            LOG_DEBUG("Failed to perform remote install!\n");
-            LOG_DEBUG("%s", e.what());
-            fprintf(stdout, "%s", e.what());
-            inst::ui::mainApp->CreateShowDialog("Failed to perform remote install!", (std::string)e.what(), {"OK"}, true);
             return {};
         }
+
+        return urls;
+    } catch (std::runtime_error& e) {
+        LOG_DEBUG("Failed to perform remote install!\n");
+        LOG_DEBUG("%s", e.what());
+        fprintf(stdout, "%s", e.what());
+        return {};
     }
 }

@@ -263,4 +263,9 @@ namespace inst::util {
         usbDsGetState(&usbState);
         return usbState;
     }
+
+    std::string GetMenuOptionIcon(bool ourBool) {
+        if(ourBool) return "romfs:/check-box-outline.png";
+        else return "romfs:/checkbox-blank-outline.png";
+    }
 }

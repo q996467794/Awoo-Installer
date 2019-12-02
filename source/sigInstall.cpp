@@ -21,21 +21,21 @@ namespace sig {
                 versionText = "\n\nYou currently have signature patches installed for up to HOS version " + patchesVersion + ".";
                 installButtonText = "Update";
             }
-            int ourResult = inst::ui::mainApp->CreateShowDialog("Install signature patches?", "Signature patches are required for installing and playing official software." + versionText, {installButtonText, "Uninstall", "Cancel"}, true);
+            int ourResult = inst::ui::mainApp->CreateShowDialog("Install signature patches?", "Signature patches are required for installing and playing official software." + versionText, {installButtonText, "Uninstall", "Cancel"}, true, 850);
             if (ourResult == 0) {
                 if (inst::util::getIPAddress() == "1.0.0.127") {
-                    inst::ui::mainApp->CreateShowDialog("Network connection not available", "Check that airplane mode is disabled and you're connected to a local network.", {"OK"}, true);
+                    inst::ui::mainApp->CreateShowDialog("Network connection not available", "Check that airplane mode is disabled and you're connected to a local network.", {"OK"}, true, 850);
                     return;
                 }
                 if (!inst::util::copyFile("sdmc:/bootloader/patches.ini", inst::config::appDir + "/patches.ini.old")) {
-                    if (inst::ui::mainApp->CreateShowDialog("Could not back up old Hekate patches.ini! Install anyway?", "Installing patches requires use of the Hekate bootloader.", {"Yes", "No"}, false)) return;
+                    if (inst::ui::mainApp->CreateShowDialog("Could not back up old Hekate patches.ini! Install anyway?", "Installing patches requires use of the Hekate bootloader.", {"Yes", "No"}, false, 850)) return;
                 }
                 std::string ourPath = inst::config::appDir + "/patches.zip";
                 bool didDownload = inst::curl::downloadFile(inst::config::sigPatchesUrl, ourPath.c_str());
                 bool didExtract = false;
                 if (didDownload) didExtract = inst::zip::extractFile(ourPath, "sdmc:/");
                 else {
-                    inst::ui::mainApp->CreateShowDialog("Could not download signature patches", "You may have supplied an invalid source in Awoo Installer's settings,\nor the host may just be down right now.", {"OK"}, true);
+                    inst::ui::mainApp->CreateShowDialog("Could not download signature patches", "You may have supplied an invalid source in Awoo Installer's settings,\nor the host may just be down right now.", {"OK"}, true, 850);
                     return;
                 }
                 std::filesystem::remove(ourPath);
@@ -43,7 +43,7 @@ namespace sig {
                     patchesVersion = inst::util::readTextFromFile("sdmc:/atmosphere/exefs_patches/es_patches/patches.txt");
                     versionText = "";
                     if (patchesVersion != "") versionText = "Your signature patches have been updated for up to HOS version " + patchesVersion + "! ";
-                    if (inst::ui::mainApp->CreateShowDialog("Install complete!", versionText + "\n\nRestart your console to apply!", {"Restart", "I'll do it later"}, false) == 0) bpcRebootSystem();
+                    if (inst::ui::mainApp->CreateShowDialog("Install complete!", versionText + "\n\nRestart your console to apply!", {"Restart", "I'll do it later"}, false, 850) == 0) bpcRebootSystem();
                 }
                 else {
                     inst::ui::mainApp->CreateShowDialog("Could not extract files!", "", {"OK"}, true);
@@ -52,12 +52,12 @@ namespace sig {
                 return;
             } else if (ourResult == 1) {
                 if (!inst::util::copyFile( inst::config::appDir + "/patches.ini.old", "sdmc:/bootloader/patches.ini")) {
-                    if (inst::ui::mainApp->CreateShowDialog("Unable to restore original Hekate patches.ini! Continue uninstalling?", "", {"Yes", "No"}, false)) return;
+                    if (inst::ui::mainApp->CreateShowDialog("Unable to restore original Hekate patches.ini! Continue uninstalling?", "", {"Yes", "No"}, false, 850)) return;
                 } else std::filesystem::remove(inst::config::appDir + "/patches.ini.old");
                 if (inst::util::removeDirectory("sdmc:/atmosphere/exefs_patches/es_patches")) {
-                    if (inst::ui::mainApp->CreateShowDialog("Uninstall complete", "Restart your console to apply", {"Restart", "I'll do it later"}, false) == 0) bpcRebootSystem();
+                    if (inst::ui::mainApp->CreateShowDialog("Uninstall complete", "Restart your console to apply", {"Restart", "I'll do it later"}, false, 850) == 0) bpcRebootSystem();
                 }
-                else inst::ui::mainApp->CreateShowDialog("Unable to remove signature patches", "Files may have been renamed or deleted", {"OK"}, true);
+                else inst::ui::mainApp->CreateShowDialog("Unable to remove signature patches", "Files may have been renamed or deleted", {"OK"}, true, 850);
             } else return;
         }
         catch (std::exception& e)
@@ -65,7 +65,7 @@ namespace sig {
             LOG_DEBUG("Failed to install Signature Patches");
             LOG_DEBUG("%s", e.what());
             fprintf(stdout, "%s", e.what());
-            inst::ui::mainApp->CreateShowDialog("Failed to install Signature Patches!", (std::string)e.what(), {"OK"}, true);
+            inst::ui::mainApp->CreateShowDialog("Failed to install Signature Patches!", (std::string)e.what(), {"OK"}, true, 850);
         }
         bpcExit();
     }

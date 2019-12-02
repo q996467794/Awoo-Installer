@@ -1,8 +1,11 @@
 #pragma once
-#include <vector>
+#include "install/install.hpp"
 #include <string>
 
-namespace usbInstStuff {
-    std::vector<std::string> OnSelected();
-    void installTitleUsb(std::vector<std::string> ourNspList, int ourStorage);
+using namespace std;
+
+namespace usb {
+    std::vector<std::string> GetFileList();
+    shared_ptr<tin::install::Install> GetUsbTask(string path, NcmStorageId destStorage);
+    inline void nop() {}
 }
