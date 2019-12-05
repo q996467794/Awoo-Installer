@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
         auto main = inst::ui::MainApplication::New(renderer);
         Language::Load();
         main->Prepare();
-        main->Show();
+        main->ShowWithFadeIn();
     } catch (std::exception& e) {
         LOG_DEBUG("An error occurred:\n%s", e.what());
     }
