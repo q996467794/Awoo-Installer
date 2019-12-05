@@ -14,11 +14,11 @@ namespace inst::ui {
 
     UsbInstallPage::UsbInstallPage(unordered_map<string, string> links, string source) : Layout::Layout(), m_links(links), m_source(source) {
         this->SetBackgroundColor(COLOR("#670000FF"));
-        this->SetBackgroundImage("romfs:/background.jpg");
+        this->SetBackgroundImage("romfs:/images/background.jpg");
         this->topRect = Rectangle::New(0, 0, 1280, 94, COLOR("#170909FF"));
         this->infoRect = Rectangle::New(0, 95, 1280, 60, COLOR("#17090980"));
         this->botRect = Rectangle::New(0, 660, 1280, 60, COLOR("#17090980"));
-        this->titleImage = Image::New(0, 0, "romfs:/logo.png");
+        this->titleImage = Image::New(0, 0, "romfs:/images/logo.png");
         this->appVersionText = TextBlock::New(480, 49, "v" + inst::config::appVersion, 22);
         this->appVersionText->SetColor(COLOR("#FFFFFFFF"));
         this->pageInfoText = TextBlock::New(10, 109, "", 30);
@@ -29,7 +29,7 @@ namespace inst::ui {
         this->menu = pu::ui::elm::Menu::New(0, 156, 1280, COLOR("#FFFFFF00"), 84, (506 / 84));
         this->menu->SetOnFocusColor(COLOR("#00000033"));
         this->menu->SetScrollbarColor(COLOR("#17090980"));
-        this->infoImage = Image::New(460, 332, "romfs:/usb-connection-waiting.png");
+        this->infoImage = Image::New(460, 332, "romfs:/images/icons/usb-connection-waiting.png");
         this->Add(this->topRect);
         this->Add(this->infoRect);
         this->Add(this->botRect);

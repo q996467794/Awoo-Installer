@@ -6,7 +6,7 @@ namespace Language {
     json lang;
 
     void Load() {
-        std::ifstream ifs("romfs:/en.json");
+        std::ifstream ifs("romfs:/lang/en.json");
         if (!ifs.good()) {
             std::cout << "[FAILED TO LOAD LANGUAGE FILE]" << std::endl;
             return;

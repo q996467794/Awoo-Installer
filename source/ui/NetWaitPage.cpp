@@ -15,11 +15,11 @@ namespace inst::ui {
     NetWaitPage::NetWaitPage() : Layout::Layout() {
         this->SetBackgroundColor(COLOR("#670000FF"));
         if (std::filesystem::exists(inst::config::appDir + "/background.png")) this->SetBackgroundImage(inst::config::appDir + "/background.png");
-        else this->SetBackgroundImage("romfs:/background.jpg");
+        else this->SetBackgroundImage("romfs:/images/background.jpg");
         this->topRect = Rectangle::New(0, 0, 1280, 94, COLOR("#170909FF"));
         this->infoRect = Rectangle::New(0, 95, 1280, 60, COLOR("#17090980"));
         this->botRect = Rectangle::New(0, 660, 1280, 60, COLOR("#17090980"));
-        this->titleImage = Image::New(0, 0, "romfs:/logo.png");
+        this->titleImage = Image::New(0, 0, "romfs:/images/logo.png");
         this->appVersionText = TextBlock::New(480, 49, "v" + inst::config::appVersion, 22);
         this->appVersionText->SetColor(COLOR("#FFFFFFFF"));
         this->butText = TextBlock::New(10, 678, "", 24);
@@ -27,7 +27,7 @@ namespace inst::ui {
         this->butText->SetText("inst.net.buttons"_lang);
         this->pageInfoText = TextBlock::New(10, 109, "", 30);
         this->pageInfoText->SetColor(COLOR("#FFFFFFFF"));
-        this->infoImage = Image::New(453, 292, "romfs:/lan-connection-waiting.png");
+        this->infoImage = Image::New(453, 292, "romfs:/images/icons/lan-connection-waiting.png");
         this->Add(this->topRect);
         this->Add(this->infoRect);
         this->Add(this->botRect);
