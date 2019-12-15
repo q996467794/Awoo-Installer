@@ -64,77 +64,41 @@ static Result _nsextGetSession(Service* srv, Service* srv_out, u32 cmd_id) {
 }
 
 Result nsPushApplicationRecord(u64 title_id, u8 last_modified_event, ContentStorageRecord *content_records_buf, size_t buf_size) {
-
     struct {
         u8 last_modified_event;
         u8 padding[0x7];
         u64 title_id;
     } in = { last_modified_event, {0}, title_id };
-    
     return serviceDispatchIn(&g_nsAppManSrv, 16, in,
         .buffer_attrs = { SfBufferAttr_HipcMapAlias | SfBufferAttr_In },
         .buffers = { { content_records_buf, buf_size } });
 }
 
 Result nsCalculateApplicationOccupiedSize(u64 titleID, void *out_buf) {
-
-    struct {
-        u64 titleID;
-    } in = { titleID };
-
-    struct {
-        u8 out[0x80];
-    } out;
-
-    Result rc = serviceDispatchInOut(&g_nsAppManSrv, 11, in, out);
-
-    if (R_SUCCEEDED(rc) && out_buf) memcpy(out_buf, out.out, 0x80);
-
-    return rc;
+    return serviceDispatchInOut(&g_nsAppManSrv, 11, titleID, *out_buf);
 }
 
 Result nsListApplicationRecordContentMeta(u64 offset, u64 titleID, void *out_buf, size_t out_buf_size, u32 *entries_read_out) {
-
     struct {
         u64 offset;
         u64 titleID;
     } in = { offset, titleID };
-
-    struct {
-        u32 entries_read;
-    } out;
-
-    Result rc = serviceDispatchInOut(&g_nsAppManSrv, 17, in, out,
+    Result rc = serviceDispatchInOut(&g_nsAppManSrv, 17, in, *entries_read_out,
         .buffer_attrs = { SfBufferAttr_HipcMapAlias | SfBufferAttr_Out },
         .buffers = { { out_buf, out_buf_size } });
-    
-    if (R_SUCCEEDED(rc) && entries_read_out) *entries_read_out = out.entries_read;
-
     return rc;
 }
 
 Result nsTouchApplication(u64 titleID) {
-    struct {
-        u64 titleID;
-    } in = { titleID };
-    
-    return serviceDispatchIn(&g_nsAppManSrv, 904, in);
+    return serviceDispatchIn(&g_nsAppManSrv, 904, titleID);
 }
 
 Result nsDeleteApplicationRecord(u64 titleID) {
-    struct {
-        u64 titleID;
-    } in = { titleID };
-    
-    return serviceDispatchIn(&g_nsAppManSrv, 27, in);
+    return serviceDispatchIn(&g_nsAppManSrv, 27, titleID);
 }
 
 Result nsLaunchApplication(u64 titleID) {
-    struct {
-        u64 titleID;
-    } in = { titleID };
-    
-    return serviceDispatchIn(&g_nsAppManSrv, 19, in);
+    return serviceDispatchIn(&g_nsAppManSrv, 19, titleID);
 }
 
 Result nsPushLaunchVersion(u64 titleID, u32 version) {
@@ -143,61 +107,27 @@ Result nsPushLaunchVersion(u64 titleID, u32 version) {
         u32 version;
         u32 padding;
     } in = { titleID, version, 0 };
-    
     return serviceDispatchIn(&g_nsAppManSrv, 36, in);
 }
 
 Result nsCheckApplicationLaunchVersion(u64 titleID) {
-    struct {
-        u64 titleID;
-    } in = { titleID };
-    
-    return serviceDispatchIn(&g_nsAppManSrv, 38, in);
+    return serviceDispatchIn(&g_nsAppManSrv, 38, titleID);
 }
 
 Result nsCountApplicationContentMeta(u64 titleId, u32* countOut) {
-
-    struct {
-        u64 titleId;
-    } in = { titleId };
-
-    struct {
-        u32 count;
-    } out;
-
-    Result rc = serviceDispatchInOut(&g_nsAppManSrv, 600, in, out);
-
-    if (R_SUCCEEDED(rc) && countOut) *countOut = out.count;
-
-    return rc;
+    return serviceDispatchInOut(&g_nsAppManSrv, 600, titleId, *countOut);
 }
 
 Result nsGetContentMetaStorage(const NcmContentMetaKey *record, u8 *storageOut) {
-
-    struct {
-        NcmContentMetaKey metaRecord;
-    } in;
-    memcpy(&in.metaRecord, record, sizeof(NcmContentMetaKey));
-
-    struct {
-        u8 out;
-    } out;
-
-    Result rc = serviceDispatchInOut(&g_nsAppManSrv, 606, in, out);
-
-    if (R_SUCCEEDED(rc) && storageOut) *storageOut = out.out;
-
-    return rc;
+    return serviceDispatchInOut(&g_nsAppManSrv, 606, *record, *storageOut);
 }
 
 Result nsBeginInstallApplication(u64 tid, u32 unk, u8 storageId) {
-
     struct {
         u32 storageId;
         u32 unk;
         u64 tid;
     } in = { storageId, unk, tid };
-
     return serviceDispatchIn(&g_nsAppManSrv, 26, in);
 }
 
@@ -206,31 +136,19 @@ Result nsInvalidateAllApplicationControlCache(void) {
 }
 
 Result nsInvalidateApplicationControlCache(u64 tid) {
-
-    struct {
-        u64 tid;
-    } in = { tid };
-    
-    return serviceDispatchIn(&g_nsAppManSrv, 404, in);
+    return serviceDispatchIn(&g_nsAppManSrv, 404, tid);
 }
 
 Result nsCheckApplicationLaunchRights(u64 tid) {
-
-    struct {
-        u64 tid;
-    } in = { tid };
-    
-    return serviceDispatchIn(&g_nsAppManSrv, 39, in);
+    return serviceDispatchIn(&g_nsAppManSrv, 39, tid);
 }
 
 Result nsGetApplicationContentPath(u64 tid, u8 type, char *out, size_t buf_size) {
-
     struct {
         u8 padding[0x7];
         u8 type;
         u64 tid;
     } in = { {0}, type, tid };
-
     return serviceDispatchIn(&g_nsAppManSrv, 21, in,
         .buffer_attrs = { SfBufferAttr_HipcMapAlias | SfBufferAttr_Out },
         .buffers = { { out, buf_size } }
@@ -238,19 +156,9 @@ Result nsGetApplicationContentPath(u64 tid, u8 type, char *out, size_t buf_size)
 }
 
 Result nsDisableApplicationAutoUpdate(u64 titleID) {
-
-    struct {
-        u64 title_id;
-    } in = { titleID };
-    
-    return serviceDispatchIn(&g_nsAppManSrv, 903, in);
+    return serviceDispatchIn(&g_nsAppManSrv, 903, titleID);
 }
 
 Result nsWithdrawApplicationUpdateRequest(u64 titleId) {
-
-    struct {
-        u64 title_id;
-    } in = { titleId };
-    
-    return serviceDispatchIn(&g_nsAppManSrv, 907, in);
+    return serviceDispatchIn(&g_nsAppManSrv, 907, titleId);
 }

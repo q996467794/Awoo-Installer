@@ -67,9 +67,7 @@ Result esGetTitleKey(const RightsId *rightsId, u8 *outBuf, size_t bufSize) {
     struct {
         RightsId rights_Id;
         u32 key_generation;
-    } in;
-    memcpy(&in.rights_Id, rightsId, sizeof(RightsId));
-    in.key_generation = 0;
+    } in = { rightsId, 0 };
 
     return serviceDispatchIn(&g_esSrv, 8, in,
         .buffer_attrs = { SfBufferAttr_HipcMapAlias | SfBufferAttr_Out },
@@ -78,66 +76,29 @@ Result esGetTitleKey(const RightsId *rightsId, u8 *outBuf, size_t bufSize) {
 }
 
 Result esCountCommonTicket(u32 *numTickets) {
-    struct {
-        u32 num_tickets;
-    } out;
-
-    Result rc = serviceDispatchOut(&g_esSrv, 9, out);
-    if (R_SUCCEEDED(rc) && numTickets) *numTickets = out.num_tickets;
-    
-    return rc;
+    return serviceDispatchOut(&g_esSrv, 9, *numTickets);
 }
 
 Result esCountPersonalizedTicket(u32 *numTickets) {
-    struct {
-        u32 num_tickets;
-    } out;
-
-    Result rc = serviceDispatchOut(&g_esSrv, 10, out);
-    if (R_SUCCEEDED(rc) && numTickets) *numTickets = out.num_tickets;
-    
-    return rc;
+    return serviceDispatchOut(&g_esSrv, 10, *numTickets);
 }
 
 Result esListCommonTicket(u32 *numRightsIdsWritten, RightsId *outBuf, size_t bufSize) {
-    struct {
-        u32 num_rights_ids_written;
-    } out;
-    
-    Result rc = serviceDispatchInOut(&g_esSrv, 11, *numRightsIdsWritten, out,
+    return serviceDispatchOut(&g_esSrv, 11, *numRightsIdsWritten,
         .buffer_attrs = { SfBufferAttr_HipcMapAlias | SfBufferAttr_Out },
         .buffers = { { outBuf, bufSize } },
     );
-    if (R_SUCCEEDED(rc) && numRightsIdsWritten) *numRightsIdsWritten = out.num_rights_ids_written;
-    
-    return rc;
 }
 
 Result esListPersonalizedTicket(u32 *numRightsIdsWritten, RightsId *outBuf, size_t bufSize) {
-    struct {
-        u32 num_rights_ids_written;
-    } out;
-    
-    Result rc = serviceDispatchInOut(&g_esSrv, 12, *numRightsIdsWritten, out,
+    return serviceDispatchOut(&g_esSrv, 12, *numRightsIdsWritten,
         .buffer_attrs = { SfBufferAttr_HipcMapAlias | SfBufferAttr_Out },
         .buffers = { { outBuf, bufSize } },
     );
-    if (R_SUCCEEDED(rc) && numRightsIdsWritten) *numRightsIdsWritten = out.num_rights_ids_written;
-    
-    return rc;
 }
 
 Result esGetCommonTicketData(u64 *unkOut, void *outBuf1, size_t bufSize1, const RightsId* rightsId) {
-    struct {
-        RightsId rights_id;
-    } in;
-    memcpy(&in.rights_id, rightsId, sizeof(RightsId));
-    
-    struct {
-        u64 unk;
-    } out;
-
-    Result rc = serviceDispatchInOut(&g_esSrv, 16, in, out,
+    Result rc = serviceDispatchInOut(&g_esSrv, 16, *rightsId, *unkOut,
         .buffer_attrs = { SfBufferAttr_HipcMapAlias | SfBufferAttr_Out },
         .buffers = { { outBuf1, bufSize1 } },
     );
