@@ -6,7 +6,7 @@ namespace inst::ui {
 
     void MainApplication::OnLoad() {
         mainApp = this;
-
+		pu::ui::render::SetDefaultFontFromShared(pu::ui::render::SharedFont::ChineseSimplified);
         Language::Load();
 
         this->mainPage = MainPage::New();

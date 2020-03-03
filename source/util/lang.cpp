@@ -24,6 +24,9 @@ namespace Language {
             case 0:
                 languagePath = "romfs:/lang/ja.json";
                 break;
+            case 1:
+                languagePath = "romfs:/lang/en.json";
+                break;
             case 2:
             case 13:
                 languagePath = "romfs:/lang/fr.json";
@@ -57,10 +60,10 @@ namespace Language {
                 languagePath = "romfs:/lang/zh-TW.json";
                 break;
             default:
-                languagePath = "romfs:/lang/en.json";
+                languagePath = "romfs:/lang/zh-CN.json";
         }
         if (std::filesystem::exists(languagePath)) ifs = std::ifstream(languagePath);
-        else ifs = std::ifstream("romfs:/lang/en.json");
+        else ifs = std::ifstream("romfs:/lang/zh-CN.json");
         if (!ifs.good()) {
             std::cout << "[FAILED TO LOAD LANGUAGE FILE]" << std::endl;
             return;

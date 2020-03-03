@@ -16,7 +16,7 @@
 namespace inst::ui {
     extern MainApplication *mainApp;
 
-    std::vector<std::string> languageStrings = {"English", "Français", "Deutsch", "Italiano", "Русский"};
+    std::vector<std::string> languageStrings = {"简体中文", "English", "Français", "Deutsch", "Italiano", "Русский"};
 
     optionsPage::optionsPage() : Layout::Layout() {
         this->SetBackgroundColor(COLOR("#670000FF"));
@@ -78,16 +78,18 @@ namespace inst::ui {
         switch (ourLangCode) {
             case 1:
             case 12:
-                return languageStrings[0];
+                return languageStrings[1];
             case 2:
             case 13:
-                return languageStrings[1];
-            case 3:
                 return languageStrings[2];
-            case 4:
+            case 3:
                 return languageStrings[3];
-            case 10:
+            case 4:
                 return languageStrings[4];
+            case 10:
+                return languageStrings[5];
+            case 6:
+                return languageStrings[0];
             default:
                 return "options.language.system_language"_lang;
         }
@@ -199,18 +201,21 @@ namespace inst::ui {
                     if (rc == -1) break;
                     switch(rc) {
                         case 0:
-                            inst::config::languageSetting = 1;
+                            inst::config::languageSetting = 6;
                             break;
                         case 1:
-                            inst::config::languageSetting = 2;
+                            inst::config::languageSetting = 1;
                             break;
                         case 2:
-                            inst::config::languageSetting = 3;
+                            inst::config::languageSetting = 2;
                             break;
                         case 3:
-                            inst::config::languageSetting = 4;
+                            inst::config::languageSetting = 3;
                             break;
                         case 4:
+                            inst::config::languageSetting = 4;
+                            break;
+                        case 5:
                             inst::config::languageSetting = 10;
                             break;
                         default:
